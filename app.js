@@ -19,8 +19,8 @@ let lastGuessedWord = null;
 let allGuessedWords = [];
 
 /**
- * 
- * @param {*} event 
+ * callback for "start" button; gets words and sets up the initial screen
+ * @param {event} event 
  */
 async function startGame(event) {
     event.preventDefault();
@@ -36,7 +36,7 @@ async function startGame(event) {
 $startButton.on("click", startGame);
 
 /**
- * 
+ * callback for "reset" button; clears current game and sets up as if on refresh
  * @param {*} event 
  */
 async function resetGame(event) {
@@ -49,8 +49,8 @@ async function resetGame(event) {
     await getRelatedWordsPopulateGuessesTable();
     
     $guessedWords.empty();
-    $endWord.toggleClass("bg-dark").toggleClass("bg-success");
-    $resetButton.toggleClass("btn-light").toggleClass("btn-secondary");
+    $endWord.addClass("bg-dark").removeClass("bg-success");
+    $resetButton.addClass("btn-light").removeClass("btn-secondary");
 
     $resetButton.toggleClass("d-none");
     $gameContent.toggleClass("d-none");
@@ -59,7 +59,8 @@ async function resetGame(event) {
 $resetButton.on("click", resetGame);
 
 /**
- * 
+ * picks first two words, primes the recommend word variable, and adds them 
+ * to the DOM
  */
 async function generateStartWords() {
     startWord = getRandomWord();
@@ -74,10 +75,12 @@ async function generateStartWords() {
 }
 
 /**
- * 
- * @returns 
+ * picks a random word from the word list in words.js, returns it
+ * @returns - random word from 
  */
 function getRandomWord() {
+    // right now, splices out words, so VERY slowly makes the list shorter and 
+    // shorter; fine for now, may want to revisit for future functionality
     const index = randomInt(0, wordsList.length - 1);
     const word = wordsList.splice(index, 1)[0];
 
@@ -85,60 +88,68 @@ function getRandomWord() {
 }
 
 /**
- * 
- * @param {*} word 
- * @returns 
+ * AJAX call to datamuse API for a set of words related to the last guessed
+ * word
+ * @param {string} word - seed word from which to generate related words 
+ * @returns array of word objects
  */
-async function getRelatedWords(word) {
-    const relatedWords = [];
+async function fetchRelatedWords(word) {
     const response = await axios({
         method: "get",
         url: DATAMUSE_API_URL,
         params: {
-           ml: word,
-           topics: endWord,
+           ml: word, // ml = "meaning like", i.e. match new words to meaning
+           topics: endWord, // pushes results towards the game's end word
            max: WORDS_PER_REQUEST
         }
     })
 
-    if (response.data.some(word => word.word.toUpperCase() === endWord)) {
+    return response.data;
+}
+
+/**
+ * finds the RELATED_WORDS_PER_DISPLAY number of words from the top of the 
+ * generated related word list that also appear in the wordsList array in 
+ * words.js; also removes duplicates with already guessed words
+ * @param {array} words - array of word objects, each with a ".word" property
+ * @returns array of selected related words from top of API response (which are
+ * more likely to be more relevant to the seed word)
+ */
+async function generateRelatedWordsList(words) {
+    const relatedWords = [];
+    
+    if (words.some(word => word.word.toUpperCase() === endWord)) {
         relatedWords.push(endWord);
     }
-
+    
     let i = 0;
-    while (relatedWords.length < RELATED_WORDS_PER_DISPLAY && i < response.data.length) {
-        let wordObj = response.data[i];
-        
+
+    // second parameter needed incase we don't find enough words before reaching
+    // the end of the options; will just return less numbers, no biggie 
+    while (relatedWords.length < RELATED_WORDS_PER_DISPLAY && i < words.length) {
         // some of the responses seems to be undefined... this just makes sure
         // we don't try to process those
-        if (wordObj) {
-            let inWordList = wordsList.includes(wordObj.word);
-            let isNewWord = !allGuessedWords.includes(wordObj.word.toUpperCase());
+        if (words[i]) {
+            let inWordList = wordsList.includes(words[i].word);
+            let isNewWord = !allGuessedWords.includes(words[i].word.toUpperCase());
     
             if (inWordList && isNewWord) {
-                relatedWords.push(wordObj.word);
+                relatedWords.push(words[i].word);
             }
         }
-
+    
         i++;
     }
-
+    
     return relatedWords;
 }
 
 /**
- * 
- * @param {*} words 
+ * populates the DOM table $guessTable with the selected related words
+ * @param {array} words - array of words to populate 
  */
 function populateGuessesTable(words) {
     $guessTable.empty();
-    /*
-    // will populate table in order of results, i.e. more relevant ones on top
-    for (let word of words) {
-        let $word = $(`<tr><td><b>${word.toUpperCase()}</b></td></tr>`);
-        $guessTable.append($word);
-    }
-    */
 
     // will populate table randomly, to make it harder!
     let i = words.length;
@@ -146,8 +157,6 @@ function populateGuessesTable(words) {
         let randomIndex = randomInt(0, i - 1);
         let randomWord = words.splice(randomIndex, 1)[0].toUpperCase();
         let $word = $(`<tr><td><b>${randomWord}</b></td></tr>`);
-
-        console.log("current guess word: ", randomWord, "; end word: ", endWord);
         
         if (randomWord === endWord) {
             $word.addClass("text-success");
@@ -160,15 +169,19 @@ function populateGuessesTable(words) {
 }
 
 /**
- * 
+ * controller function to get a bunch of related words, filter them down to the
+ * selected words, and then populate the table in the DOM
  */
 async function getRelatedWordsPopulateGuessesTable() {
-    let relatedWords = await getRelatedWords(lastGuessedWord);
+    let allWords = await fetchRelatedWords(lastGuessedWord);
+    let relatedWords = await generateRelatedWordsList(allWords);
     populateGuessesTable(relatedWords);
 }
 
 /**
- * 
+ * callback for click listener on words in the guess table; if clicked word is
+ * the end word, triggers end game conditions; if not, stores that word and 
+ * regenerates the table
  * @param {*} event 
  */
 async function handleWordClick(event) {
@@ -176,25 +189,13 @@ async function handleWordClick(event) {
     allGuessedWords.push(lastGuessedWord);
     let $guessedWord = $(`<h3>${lastGuessedWord}</h3>`);
     $guessedWords.append($guessedWord);
-    if (!checkForWinningWord()) {
+    if (lastGuessedWord !== endWord) {
         await getRelatedWordsPopulateGuessesTable();
     } else {
         $guessTable.empty();
         $endWord.toggleClass("bg-dark").toggleClass("bg-success");
         $resetButton.toggleClass("btn-light").toggleClass("btn-secondary");
     }
-}
-
-/**
- * 
- * @returns 
- */
-function checkForWinningWord() {
-    if (lastGuessedWord === endWord) {
-        return true;
-    }
-
-    return false;
 }
 
 $guessTable.on("click", "td", handleWordClick);
