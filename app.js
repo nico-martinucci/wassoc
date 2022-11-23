@@ -2,10 +2,13 @@
 
 const DATAMUSE_API_URL = "https://api.datamuse.com/words";
 const WORDS_PER_REQUEST = 200;
-const RELATED_WORDS_PER_DISPLAY = 10;
+const RELATED_WORDS_PER_DISPLAY = 9;
 
+const $gameContent = $("#game-content");
 const $guessTable = $("#guess-options");
 const $guessedWords = $("#guessed-words");
+const $startButton = $("#start-button");
+const $resetButton = $("#reset-button");
 
 let startWord = null;
 let endWord = null;
@@ -13,6 +16,63 @@ let endWord = null;
 let lastGuessedWord = null;
 let allGuessedWords = [];
 
+/**
+ * 
+ * @param {*} event 
+ */
+async function startGame(event) {
+    event.preventDefault();
+
+    await generateStartWords();
+    await getRelatedWordsPopulateGuessesTable();
+
+    $gameContent.toggleClass("d-none");
+    $startButton.toggleClass("d-none");
+    $resetButton.toggleClass("d-none");
+}
+
+$startButton.on("click", startGame);
+
+/**
+ * 
+ * @param {*} event 
+ */
+async function resetGame(event) {
+    event.preventDefault();
+
+    $gameContent.toggleClass("d-none");
+    $resetButton.toggleClass("d-none");
+    
+    await generateStartWords();
+    await getRelatedWordsPopulateGuessesTable();
+    
+    $guessedWords.empty();
+
+    $resetButton.toggleClass("d-none");
+    $gameContent.toggleClass("d-none");
+}
+
+$resetButton.on("click", resetGame);
+
+/**
+ * 
+ */
+async function generateStartWords() {
+    startWord = getRandomWord();
+    endWord = getRandomWord();
+
+    allGuessedWords.push(startWord, endWord);
+
+    lastGuessedWord = startWord;
+
+    $("#start-word").text(startWord.toUpperCase());
+    $("#end-word").text(endWord.toUpperCase());
+}
+
+/**
+ * 
+ * @returns 
+ */
 function getRandomWord() {
     const index = randomInt(0, wordsList.length - 1);
     const word = wordsList.splice(index, 1)[0];
@@ -20,6 +80,11 @@ function getRandomWord() {
     return word.toUpperCase();
 }
 
+/**
+ * 
+ * @param {*} word 
+ * @returns 
+ */
 async function getRelatedWords(word) {
     const relatedWords = [];
     const response = await axios({
@@ -39,17 +104,6 @@ async function getRelatedWords(word) {
     let i = 0;
     while (relatedWords.length < RELATED_WORDS_PER_DISPLAY && i < response.data.length) {
         let wordObj = response.data[i];
-        /*
-        let isNoun = wordObj.tags.includes("n");
-        let noSpaces = !wordObj.word.includes(" ");
-        let isNewWord = !allGuessedWords.includes(wordObj.word.toUpperCase());
-
-        if (isNoun && noSpaces && isNewWord) {
-            relatedWords.push(wordObj.word);
-        }
-        */
-
-        console.log("word: ", wordObj);
         
         // some of the responses seems to be undefined... this just makes sure
         // we don't try to process those
@@ -68,45 +122,67 @@ async function getRelatedWords(word) {
     return relatedWords;
 }
 
-async function generateStartWords() {
-    startWord = getRandomWord();
-    endWord = getRandomWord();
-
-    allGuessedWords.push(startWord, endWord);
-
-    lastGuessedWord = startWord;
-
-    $("#start-word").text(startWord.toUpperCase());
-    $("#end-word").text(endWord.toUpperCase());
-
-    getRelatedWordsAndPopulateTable();
-}
-
-async function getRelatedWordsAndPopulateTable() {
-    let relatedWords = await getRelatedWords(lastGuessedWord);
-    populateGuessesTable(relatedWords);
-}
-
+/**
+ * 
+ * @param {*} words 
+ */
 function populateGuessesTable(words) {
     $guessTable.empty();
+    /*
+    // will populate table in order of results, i.e. more relevant ones on top
     for (let word of words) {
         let $word = $(`<tr><td><b>${word.toUpperCase()}</b></td></tr>`);
         $guessTable.append($word);
     }
+    */
+
+    // will populate table randomly, to make it harder!
+    let i = words.length;
+    while (i > 0) {
+        let randomIndex = randomInt(0, i - 1);
+        let randomWord = words.splice(randomIndex, 1)[0].toUpperCase();
+        let $word = $(`<tr><td><b>${randomWord}</b></td></tr>`);
+
+        console.log("current guess word: ", randomWord, "; end word: ", endWord);
+        
+        if (randomWord === endWord) {
+            $word.addClass("text-success");
+        }
+
+        $guessTable.append($word);
+
+        i--;
+    }
 }
 
-function handleWordClick(event) {
+/**
+ * 
+ */
+async function getRelatedWordsPopulateGuessesTable() {
+    let relatedWords = await getRelatedWords(lastGuessedWord);
+    populateGuessesTable(relatedWords);
+}
+
+/**
+ * 
+ * @param {*} event 
+ */
+async function handleWordClick(event) {
     lastGuessedWord = $(event.target).text();
     allGuessedWords.push(lastGuessedWord);
     let $guessedWord = $(`<h3>${lastGuessedWord}</h3>`);
     $guessedWords.append($guessedWord);
     if (!checkForWinningWord()) {
-        getRelatedWordsAndPopulateTable();
+        await getRelatedWordsPopulateGuessesTable();
     } else {
         $guessTable.empty();
     }
 }
 
+/**
+ * 
+ * @returns 
+ */
 function checkForWinningWord() {
     if (lastGuessedWord === endWord) {
         return true;
@@ -116,8 +192,6 @@ function checkForWinningWord() {
 }
 
 $guessTable.on("click", "td", handleWordClick);
-
-generateStartWords();
 
 
 /**
