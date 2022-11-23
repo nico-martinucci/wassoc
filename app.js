@@ -5,6 +5,8 @@ const WORDS_PER_REQUEST = 200;
 const RELATED_WORDS_PER_DISPLAY = 9;
 
 const $gameContent = $("#game-content");
+const $startWord = $("#start-word");
+const $endWord = $("#end-word");
 const $guessTable = $("#guess-options");
 const $guessedWords = $("#guessed-words");
 const $startButton = $("#start-button");
@@ -47,6 +49,8 @@ async function resetGame(event) {
     await getRelatedWordsPopulateGuessesTable();
     
     $guessedWords.empty();
+    $endWord.toggleClass("bg-dark").toggleClass("bg-success");
+    $resetButton.toggleClass("btn-light").toggleClass("btn-secondary");
 
     $resetButton.toggleClass("d-none");
     $gameContent.toggleClass("d-none");
@@ -65,8 +69,8 @@ async function generateStartWords() {
 
     lastGuessedWord = startWord;
 
-    $("#start-word").text(startWord.toUpperCase());
-    $("#end-word").text(endWord.toUpperCase());
+    $startWord.text(startWord.toUpperCase());
+    $endWord.text(endWord.toUpperCase());
 }
 
 /**
@@ -176,6 +180,8 @@ async function handleWordClick(event) {
         await getRelatedWordsPopulateGuessesTable();
     } else {
         $guessTable.empty();
+        $endWord.toggleClass("bg-dark").toggleClass("bg-success");
+        $resetButton.toggleClass("btn-light").toggleClass("btn-secondary");
     }
 }
 
