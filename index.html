@@ -13,8 +13,8 @@
     <h5 class="text-muted">the word association game</h5>
     <hr class="border border-dark border-2 opacity-75">
     <p></p>
-    <section class="container">
-        <button class="btn btn-primary" id="start-button">start</button>
+    <section class="container" id="game">
+        <button class="btn btn-lg btn-primary" id="start-button">start</button>
         <div id="game-content" class="row d-none">
             <div class="col-lg-2"></div>
             <div class="col-12 col-lg-8">
@@ -25,12 +25,58 @@
             </div>
             <div class="col-lg-2"></div>
         </div>
-        <button class ="btn btn-light d-none" id="reset-button">reset</button>
+        <button class ="btn btn-lg btn-light d-none" id="reset-button">reset</button>
+        <p></p>
+        <button class="btn btn-lg btn-light" id="how-to-play-button">how to play</button>
+    </section>
+
+    <section class="container d-none" id="how-to-play">
+        <div class="row">
+            <div class="col-lg-2"></div>
+            <div class="col-12 col-lg-8">
+                <h5>goal</h5>
+                <p>
+                    the goal of the game is to connect two otherwise unrelated words through a series of creative
+                    word associations.
+                </p>
+                <h5>how to play</h5>
+                <p>
+                    when you click "start," you will be provided a starting word (top) and target word (bottom),
+                    along with a table of up to 9 words. these words are <i>relevant</i> in meaning to the start 
+                    word. clicking on a word will add it to your word association chain, and generate a new list of
+                    words related to your new guess. continue this process until you reach the target word!
+                </p>
+                <h5>tips</h5>
+                <p>stuck or not sure how to proceed? look no further:</p>
+                <ul>
+                    <li>
+                        think about alternative meanings to provided words; while that word was generated because
+                        of a specific definition (related to the previous word), the new list of guesses will be based
+                        on <b>all</b> definitions of that word.
+                    </li>
+                    <li>
+                        are you no where close to the target word, or in a loop of related words? make guesses that 
+                        are most likely to break you out into new territory.
+                    </li>
+                    <li>
+                        if you <b>ever</b> have a word list that contains the target word it'll show up in green to
+                        make sure you don't miss it :)
+                    </li>
+                </ul>
+                <h5>datamuse api</h5>
+                <p>
+                    this little game is possible thanks to the awesome folks over at <a href="https://www.datamuse.com/" target="_blank">datamuse.com</a> and their <a href="https://www.datamuse.com/api/" target="_blank">word-finding api</a>.
+            </div>
+            <div class="col-lg-2"></div>
+        </div>
+        <p></p>
+        <button class="btn btn-lg btn-dark" id="return-to-game">back</button>
     </section>
 
     <script src="https://unpkg.com/jquery"></script>
     <script src="https://unpkg.com/axios/dist/axios.js"></script>
     <script src="words.js"></script>
+    <script src="ui.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
