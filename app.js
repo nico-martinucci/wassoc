@@ -37,15 +37,29 @@ async function getRelatedWords(word) {
     }
 
     let i = 0;
-    while (relatedWords.length < RELATED_WORDS_PER_DISPLAY) {
+    while (relatedWords.length < RELATED_WORDS_PER_DISPLAY && i < response.data.length) {
         let wordObj = response.data[i];
-
+        /*
         let isNoun = wordObj.tags.includes("n");
         let noSpaces = !wordObj.word.includes(" ");
         let isNewWord = !allGuessedWords.includes(wordObj.word.toUpperCase());
 
         if (isNoun && noSpaces && isNewWord) {
             relatedWords.push(wordObj.word);
+        }
+        */
+
+        console.log("word: ", wordObj);
+        
+        // some of the responses seems to be undefined... this just makes sure
+        // we don't try to process those
+        if (wordObj) {
+            let inWordList = wordsList.includes(wordObj.word);
+            let isNewWord = !allGuessedWords.includes(wordObj.word.toUpperCase());
+    
+            if (inWordList && isNewWord) {
+                relatedWords.push(wordObj.word);
+            }
         }
 
         i++;
@@ -76,7 +90,7 @@ async function getRelatedWordsAndPopulateTable() {
 function populateGuessesTable(words) {
     $guessTable.empty();
     for (let word of words) {
-        let $word = $(`<tr><td>${word.toUpperCase()}</td></tr>`);
+        let $word = $(`<tr><td><b>${word.toUpperCase()}</b></td></tr>`);
         $guessTable.append($word);
     }
 }
