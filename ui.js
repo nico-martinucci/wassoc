@@ -17,7 +17,7 @@ const $returnButton = $("#return-to-game");
  * callback for "start" button; gets words and sets up the initial screen
  * @param {event} event 
  */
- async function startGame(event) {
+async function startGame(event) {
     event.preventDefault();
 
     await generateStartWords();
@@ -39,10 +39,10 @@ async function resetGame(event) {
 
     $gameContent.toggleClass("d-none");
     $resetButton.toggleClass("d-none");
-    
+
     await generateStartWords();
     await getRelatedWordsPopulateGuessesTable();
-    
+
     $guessedWords.empty();
     $endWord.addClass("bg-dark").removeClass("bg-success");
     $resetButton.addClass("btn-light").removeClass("btn-secondary");
@@ -53,6 +53,9 @@ async function resetGame(event) {
 
 $resetButton.on("click", resetGame);
 
+/**
+ * callback function for showing and hiding the "how to play" page
+ */
 function showHideHowToPlay() {
     $gameContainer.toggleClass("d-none");
     $howToPlayContainer.toggleClass("d-none");
